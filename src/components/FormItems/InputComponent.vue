@@ -1,12 +1,21 @@
 <template>
-  <div :id="'guide-form-item-' + item.id" :class="[item.paddingClass, 'guide-item-container']">
-    <mtd-form-item :label="`${item?.sequence} ${item?.name}`" :prop="item.id" :rules="item?.rules || []">
-      <div class="guide-item">
-        <mtd-tooltip :content="currentValue" placement="top-start" :disabled="tooltipDisabled">
-          <mtd-input v-model.trim="currentValue" placeholder="请输入" @blur="handleBlur" />
-        </mtd-tooltip>
+  <div :id="'form-item-' + item.id" :class="[item.paddingClass, 'form-item-container']">
+    <div class="form-item">
+      <label :for="'input-' + item.id" class="form-label">{{ `${item?.sequence} ${item?.name}` }}</label>
+      <div class="form-input-wrapper">
+        <input
+          :id="'input-' + item.id"
+          v-model.trim="currentValue"
+          type="text"
+          class="form-input"
+          placeholder="请输入"
+          @blur="handleBlur"
+        />
+        <div v-if="item.rules && item.rules.length" class="form-error">
+          <!-- 简化处理，实际使用时需要根据校验规则显示错误信息 -->
+        </div>
       </div>
-    </mtd-form-item>
+    </div>
   </div>
 </template>
 
@@ -31,11 +40,6 @@ export default {
       currentValue: this.value,
     }
   },
-  computed: {
-    tooltipDisabled() {
-      return !this.currentValue?.length || this.currentValue?.length < 30
-    },
-  },
   methods: {
     handleBlur() {
       const lastValue = this.value
@@ -50,23 +54,50 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.guide-item-container {
+.form-item-container {
   display: flex;
-  align-items: center;
-  .font-14 ::v-deep .mtd-form-item-label {
-    font-size: 14px;
-  }
-  .mtd-form-item {
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  .form-item {
     width: 100%;
     display: flex;
-    .mtd-input-wrapper {
-      width: 100%;
+    flex-direction: column;
+
+    .form-label {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
     }
-    ::v-deep .mtd-form-item-label,
-    ::v-deep .mtd-form-item-content {
-      text-align: left;
-      flex: 1;
-      margin-left: 0 !important;
+
+    .form-input-wrapper {
+      position: relative;
+
+      .form-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        font-size: 14px;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+
+        &:focus {
+          outline: none;
+          border-color: #409eff;
+        }
+
+        &::placeholder {
+          color: #c0c4cc;
+        }
+      }
+
+      .form-error {
+        position: absolute;
+        font-size: 12px;
+        color: #f56c6c;
+        margin-top: 2px;
+      }
     }
   }
 }

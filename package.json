@@ -1,5 +1,5 @@
 {
-  "name": "dynamic-form",
+  "name": "dynamic-form-lib",
   "version": "1.0.0",
   "description": "A flexible dynamic form library with conditional rendering and validation",
   "main": "dist/dynamic-form.umd.js",
@@ -16,8 +16,12 @@
     "conditional",
     "validation"
   ],
-  "author": "",
+  "author": "Your Name",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/dynamic-form-lib.git"
+  },
   "peerDependencies": {
     "vue": "^2.6.0"
   },

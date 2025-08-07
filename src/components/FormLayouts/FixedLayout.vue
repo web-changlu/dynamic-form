@@ -1,10 +1,10 @@
 <template>
-  <div class="fixed-layout-container p-10">
+  <div class="fixed-layout-container">
     <div class="left-container">
       <div
         v-for="item in adjustedItems.leftItems.filter((i) => i.component !== 'module')"
         :key="item.id"
-        class="guide-item"
+        class="form-item"
       >
         <component
           :is="item.component"
@@ -19,7 +19,7 @@
       <div
         v-for="item in adjustedItems.rightItems.filter((i) => i.component !== 'module')"
         :key="item.id"
-        class="guide-item"
+        class="form-item"
       >
         <component
           :is="item.component"
@@ -90,12 +90,15 @@ export default {
   flex-direction: row;
   background-color: #fff;
   gap: 10px 20px;
+  padding: 10px;
+
   .left-container,
   .right-container {
     flex: 1;
     gap: 10px;
   }
-  .guide-item {
+
+  .form-item {
     margin: 10px 0;
   }
 }

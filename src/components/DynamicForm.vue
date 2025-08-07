@@ -1,19 +1,37 @@
 <template>
   <div class="dynamic-form-container">
-    <mtd-form ref="dynamicFormRef" scroll-to-first-error :model="formData" :disabled="noEditPermissions">
-      <mtd-tabs v-model="activeName" type="border-card">
-        <mtd-tab-pane v-for="tab in tabs" :key="tab.value" :label="tab.label" :value="tab.value">
-          <component
-            :is="tab.layout"
-            :form-config="tabsConfig[tab.value]"
-            :form-data="formData"
-            :no-edit-permissions="noEditPermissions"
-            :biz-serial-no="bizSerialNo"
-            :split-id="tab.splitId"
-          />
-        </mtd-tab-pane>
-      </mtd-tabs>
-    </mtd-form>
+    <form class="dynamic-form" @submit.prevent>
+      <div class="tabs">
+        <div class="tab-header">
+          <div
+            v-for="tab in tabs"
+            :key="tab.value"
+            class="tab-item"
+            :class="{ active: activeName === tab.value }"
+            @click="activeName = tab.value"
+          >
+            {{ tab.label }}
+          </div>
+        </div>
+        <div class="tab-content">
+          <div
+            v-for="tab in tabs"
+            :key="tab.value"
+            class="tab-pane"
+            :style="{ display: activeName === tab.value ? 'block' : 'none' }"
+          >
+            <component
+              :is="tab.layout"
+              :form-config="tabsConfig[tab.value]"
+              :form-data="formData"
+              :no-edit-permissions="noEditPermissions"
+              :biz-serial-no="bizSerialNo"
+              :split-id="tab.splitId"
+            />
+          </div>
+        </div>
+      </div>
+    </form>
     <!-- 历史记录组件 -->
     <slot name="history-record" />
   </div>
@@ -92,6 +110,7 @@ export default {
       formItemRes: this.formItems,
       tabsConfig: {},
       formData: {},
+      errors: {},
       NO_EDIT_FORM_ITEM_LIST_ENUM,
       SINGLE_ELEMENT_FORM_ITEM_LIST_ENUM,
       SINGLE_ELEMENT_FORM_ITEM_VALUE_ARRAY_LIST_ENUM,
@@ -181,19 +200,35 @@ export default {
       this.$emit('save-form', this.formData)
     },
     validateItem(id) {
-      this.$refs.dynamicFormRef.validateField(id)
-    },
-    async validate() {
-      try {
-        await thi.dynamicFormRef.validate()
-        return true
-      } catch (err) {
-        console.error('表单校验失败', err)
-        return false
+      // 简化校验逻辑
+      if (this.errors[id]) {
+        delete this.errors[id]
       }
     },
+    async validate() {
+      // 简化校验逻辑，实际应用中需要根据rules进行校验
+      this.errors = {}
+      let isValid = true
+
+      // 遍历所有表单项，检查必填项
+      Object.keys(this.tabsConfig).forEach((tabKey) => {
+        this.tabsConfig[tabKey].forEach((item) => {
+          if (item.rules && item.rules.some((rule) => rule.required)) {
+            const value = this.formData[item.id]
+            if (!value && value !== 0) {
+              this.errors[item.id] = '此项为必填项'
+              isValid = false
+            }
+          }
+        })
+      })
+
+      return isValid
+    },
     resetFields() {
-      this.$refs.dynamicFormRef.resetFields()
+      this.formData = {}
+      this.errors = {}
+      this.initForm()
     },
     setFieldsValue(values) {
       Object.keys(values).forEach((key) => {
@@ -209,11 +244,46 @@ export default {
 
 <style lang="less" scoped>
 .dynamic-form-container {
-  ::v-deep .mtd-tabs-content {
-    padding: 0;
-  }
-  ::v-deep .mtd-form-item-label {
-    padding-right: 40px;
+  .dynamic-form {
+    width: 100%;
+
+    .tabs {
+      border: 1px solid #dcdfe6;
+      border-radius: 4px;
+      overflow: hidden;
+
+      .tab-header {
+        display: flex;
+        background-color: #f5f7fa;
+        border-bottom: 1px solid #dcdfe6;
+
+        .tab-item {
+          padding: 10px 20px;
+          cursor: pointer;
+          transition: all 0.3s;
+          border-right: 1px solid #dcdfe6;
+
+          &:hover {
+            color: #409eff;
+          }
+
+          &.active {
+            background-color: #fff;
+            color: #409eff;
+            border-bottom: 2px solid #409eff;
+            margin-bottom: -1px;
+          }
+        }
+      }
+
+      .tab-content {
+        background-color: #fff;
+
+        .tab-pane {
+          padding: 20px;
+        }
+      }
+    }
   }
 }
 </style>

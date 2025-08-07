@@ -1,6 +1,6 @@
 <template>
-  <div class="guide-tab-pane-container p-10">
-    <div v-for="item in formConfig.filter((i) => i.component !== 'module')" :key="item.id" class="guide-item">
+  <div class="tabs-layout-container">
+    <div v-for="item in formConfig.filter((i) => i.component !== 'module')" :key="item.id" class="form-item">
       <component
         :is="item.component"
         v-model="formData[item.id]"
@@ -48,10 +48,12 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.guide-tab-pane-container {
+.tabs-layout-container {
   column-count: 2; /* 设置列数为2 */
   column-gap: 20px; /* 设置列间距 */
-  .guide-item {
+  padding: 10px;
+
+  .form-item {
     break-inside: avoid; /* 避免元素被拆分到两列 */
     margin-bottom: 10px; /* 设置元素之间的间距 */
   }

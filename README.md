@@ -1,4 +1,4 @@
-# Dynamic Form
+# Dynamic Form Library
 
 一个灵活的动态表单库，支持条件渲染、表单联动和验证。
 
@@ -11,11 +11,12 @@
 - 支持多种布局方式（单列、双列、Tab 页）
 - 支持树形结构的表单项
 - 支持表单项的动态增删改
+- **框架无关**：使用原生 HTML 元素实现，可以与任何 UI 框架集成
 
 ## 安装
 
 ```bash
-npm install dynamic-form
+npm install dynamic-form-lib
 ```
 
 ## 基本用法
@@ -25,13 +26,16 @@ npm install dynamic-form
   <dynamic-form
     :form-config="formConfig"
     :form-data="formData"
+    :form-items="formItems"
+    :tabs="tabs"
+    :event-handler="handleFormEvent"
     @form-change="handleFormChange"
     @form-submit="handleFormSubmit"
   />
 </template>
 
 <script>
-import { DynamicForm } from 'dynamic-form'
+import { DynamicForm, createComponentConfigItem } from 'dynamic-form-lib'
 
 export default {
   components: {
@@ -40,38 +44,75 @@ export default {
   data() {
     return {
       formData: {},
-      formConfig: [
+      formConfig: {
+        1: createComponentConfigItem({ name: 'module' }),
+        2: createComponentConfigItem({
+          name: 'InputComponent',
+          rules: [{ required: true, message: '请输入姓名' }],
+        }),
+        3: createComponentConfigItem({
+          name: 'RadioComponent',
+          options: {
+            type: 'static',
+            value: [
+              { label: '男', value: '1' },
+              { label: '女', value: '2' },
+            ],
+          },
+          hasEventDecision: true,
+        }),
+      },
+      formItems: [
         {
           id: '1',
           name: '基本信息',
           component: 'module',
-          children: [
-            {
-              id: '2',
-              name: '姓名',
-              component: 'InputComponent',
-              rules: [{ required: true, message: '请输入姓名' }],
-            },
-            {
-              id: '3',
-              name: '性别',
-              component: 'RadioComponent',
-              options: {
-                type: 'static',
-                value: [
-                  { label: '男', value: '1' },
-                  { label: '女', value: '2' },
-                ],
-              },
-            },
-          ],
+          parentId: null,
+          rank: 1,
+          level: 1,
+        },
+        {
+          id: '2',
+          name: '姓名',
+          component: 'InputComponent',
+          parentId: '1',
+          rank: 1,
+          level: 2,
+          content: {
+            elements: [{ value: '' }],
+          },
+        },
+        {
+          id: '3',
+          name: '性别',
+          component: 'RadioComponent',
+          parentId: '1',
+          rank: 2,
+          level: 2,
+          hasEventDecision: true,
+          content: {
+            elements: [{ value: '' }],
+          },
+        },
+      ],
+      tabs: [
+        {
+          label: '基本信息',
+          value: 'basicInfo',
+          layout: 'FixedLayout',
+          rootId: '1',
         },
       ],
     }
   },
   methods: {
-    handleFormChange(changedValues) {
-      console.log('表单值变化:', changedValues)
+    handleFormEvent({ formItemId, value, formItems }) {
+      console.log('表单联动事件', formItemId, value)
+      return formItems
+    },
+    handleFormChange({ id, value, formData }) {
+      console.log('表单值变化:', id, value)
+      this.formData = formData
     },
     handleFormSubmit(formData) {
       console.log('表单提交:', formData)
@@ -83,112 +124,91 @@ export default {
 
 ## 表单配置
 
-表单配置是一个数组，每个元素代表一个表单项，具有以下属性：
+表单配置是一个对象，key 为表单项的 ID，value 为表单项的配置：
 
-- `id`: 表单项的唯一标识
-- `name`: 表单项的名称
-- `component`: 表单项的组件类型
-- `rules`: 表单项的校验规则
-- `options`: 表单项的选项（用于单选、多选等）
-- `children`: 子表单项（用于树形结构）
-- `hasEventDecision`: 是否有事件决策（用于表单联动）
-- `eventDecisionFormItemIds`: 事件决策影响的表单项 ID 列表
+```javascript
+const formConfig = {
+  1: createComponentConfigItem({ name: 'module' }),
+  2: createComponentConfigItem({
+    name: 'InputComponent',
+    rules: [{ required: true, message: '请输入姓名' }],
+  }),
+}
+```
 
-## 表单项类型
+## 表单项
 
-- `InputComponent`: 输入框
-- `RadioComponent`: 单选框
-- `CheckboxComponent`: 多选框
-- `DatePickerComponent`: 日期选择器
-- `TextComponent`: 文本展示
-- `TitleComponent`: 标题
-- `TagComponent`: 标签
-- `TableComponent`: 表格
-- `ListComponent`: 列表
-- `TextareaComponent`: 多行文本输入
-- `UploadComponent`: 文件上传
-- `CascaderComponent`: 级联选择器
-- `RadioInputComponent`: 单选框+输入框
-- `TagInputComponent`: 标签+输入框
+表单项是一个数组，每个元素代表一个表单项，具有以下属性：
 
-## 布局组件
+```javascript
+const formItems = [
+  {
+    id: '1', // 唯一标识
+    name: '基本信息', // 表单项名称
+    component: 'module', // 组件类型
+    parentId: null, // 父级ID，用于构建树形结构
+    rank: 1, // 排序
+    level: 1, // 层级
+    content: {
+      // 内容
+      elements: [
+        { value: '' }, // 值
+      ],
+    },
+  },
+]
+```
 
-- `FixedLayout`: 固定双列布局
-- `TabsLayout`: 标签页布局
+## 自定义样式
 
-## 事件
+库使用了原生 HTML 元素，你可以通过 CSS 自定义样式：
 
-- `form-change`: 表单值变化时触发
-- `form-submit`: 表单提交时触发
-- `form-validate`: 表单校验时触发
+```css
+/* 自定义表单样式 */
+.dynamic-form-container {
+  /* 你的样式 */
+}
 
-## 方法
+/* 自定义输入框样式 */
+.form-input {
+  /* 你的样式 */
+}
 
-- `validate()`: 校验表单
-- `resetFields()`: 重置表单
-- `setFieldsValue(values)`: 设置表单值
-- `getFieldsValue()`: 获取表单值
+/* 自定义单选框样式 */
+.radio-button {
+  /* 你的样式 */
+}
+```
 
-## 高级用法
+## 与 UI 框架集成
 
-### 表单联动
+由于使用了原生 HTML 元素，你可以轻松地与任何 UI 框架集成：
+
+### 与 Element UI 集成
 
 ```vue
 <template>
-  <dynamic-form :form-config="formConfig" :form-data="formData" :event-handler="handleFormEvent" />
+  <div>
+    <dynamic-form :form-config="formConfig" :form-items="formItems" :tabs="tabs" />
+    <el-button type="primary" @click="submitForm">提交</el-button>
+  </div>
 </template>
-
-<script>
-import { DynamicForm } from 'dynamic-form'
-
-export default {
-  components: {
-    DynamicForm,
-  },
-  data() {
-    return {
-      formData: {},
-      formConfig: [
-        {
-          id: '1',
-          name: '是否有工作',
-          component: 'RadioComponent',
-          options: {
-            type: 'static',
-            value: [
-              { label: '是', value: '1' },
-              { label: '否', value: '0' },
-            ],
-          },
-          hasEventDecision: true,
-          eventDecisionFormItemIds: ['2'],
-        },
-        {
-          id: '2',
-          name: '工作单位',
-          component: 'InputComponent',
-          rules: [{ required: true, message: '请输入工作单位' }],
-          visible: false,
-        },
-      ],
-    }
-  },
-  methods: {
-    handleFormEvent({ formItemId, value, formItems }) {
-      if (formItemId === '1') {
-        // 根据"是否有工作"的值决定是否显示"工作单位"
-        const workUnitItem = formItems.find((item) => item.id === '2')
-        if (workUnitItem) {
-          workUnitItem.visible = value === '1'
-        }
-        return formItems
-      }
-      return formItems
-    },
-  },
-}
-</script>
 ```
+
+### 与 Ant Design Vue 集成
+
+```vue
+<template>
+  <div>
+    <dynamic-form :form-config="formConfig" :form-items="formItems" :tabs="tabs" />
+    <a-button type="primary" @click="submitForm">提交</a-button>
+  </div>
+</template>
+```
+
+## 更多信息
+
+查看 [FEATURES.md](./FEATURES.md) 了解更多关于动态表单库的特性和优势。
 
 ## 许可证
 

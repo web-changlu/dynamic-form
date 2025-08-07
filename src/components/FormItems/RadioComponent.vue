@@ -1,30 +1,36 @@
 <template>
-  <div :id="'guide-form-item-' + item.id" :class="[item.paddingClass, 'guide-item-container']">
-    <mtd-form-item :label="`${item?.sequence} ${item?.name}`" :prop="item.id" :rules="item?.rules || []">
-      <template #label>
-        <span class="guide-form-item-radio-title">
-          {{ `${item?.sequence} ${item?.name}` }}
-          <i
-            v-if="item.hasHistory && noEditPermissions"
-            class="mtdicon mtdicon-info-circle-o guide-history-icon"
-            title="留痕记录"
-            @click="() => showHistory(item)"
-          />
-        </span>
-      </template>
-      <div :class="[item.level === 3 ? 'pl-10' : '']">
-        <mtd-radio-group v-model="currentValue" @change="radioChange">
-          <mtd-radio-button
-            v-for="radio in options || []"
-            :key="radio.label"
+  <div :id="'form-item-' + item.id" :class="[item.paddingClass, 'form-item-container']">
+    <div class="form-item">
+      <label class="form-label">
+        {{ `${item?.sequence} ${item?.name}` }}
+        <i
+          v-if="item.hasHistory && noEditPermissions"
+          class="history-icon"
+          title="留痕记录"
+          @click="() => showHistory(item)"
+          >📋</i
+        >
+      </label>
+      <div :class="[item.level === 3 ? 'pl-10' : '', 'radio-group']">
+        <div
+          v-for="radio in options || []"
+          :key="radio.label"
+          class="radio-button"
+          :class="{ 'radio-button-active': currentValue === radio.value, 'radio-button-disabled': radio.disabled }"
+          @click="!radio.disabled && radioChange(radio.value)"
+        >
+          <input
+            v-model="currentValue"
+            type="radio"
+            :name="'radio-' + item.id"
             :value="radio.value"
             :disabled="radio.disabled"
-          >
-            {{ radio.label }}
-          </mtd-radio-button>
-        </mtd-radio-group>
+            style="display: none"
+          />
+          <span>{{ radio.label }}</span>
+        </div>
       </div>
-    </mtd-form-item>
+    </div>
   </div>
 </template>
 
@@ -73,26 +79,20 @@ export default {
       }
     },
     radioChange(selectValue) {
+      if (this.noEditPermissions) return
+
       const lastValue = cloneDeep(this.value)
       if (this.item?.extendData?.confirm) {
-        return this.$mtd
-          .confirm({
-            title: `${this.item?.extendData?.confirmText || '提示'}`,
-            message: '',
-            type: 'warning',
-            okButtonText: '我知道了',
-            onOk: () => {
-              this.$emit('input', selectValue)
-              this.updateConfig(selectValue, lastValue)
-            },
-            onCancel: () => {
-              this.currentValue = lastValue
-            },
-          })
-          .catch(() => {})
+        if (confirm(`${this.item?.extendData?.confirmText || '确认选择此项?'}`)) {
+          this.currentValue = selectValue
+          this.$emit('input', selectValue)
+          this.updateConfig(selectValue, lastValue)
+        }
+      } else {
+        this.currentValue = selectValue
+        this.$emit('input', selectValue)
+        this.updateConfig(selectValue, lastValue)
       }
-      this.$emit('input', selectValue)
-      this.updateConfig(selectValue, lastValue)
     },
     async updateConfig(selectValue, lastValue) {
       recordChangeValue('RadioComponent', this.item.id, this.currentValue, lastValue)
@@ -110,25 +110,71 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.guide-item-container {
+.form-item-container {
   display: flex;
-  align-items: center;
-  .font-14 ::v-deep .mtd-form-item-label {
-    font-size: 14px;
-  }
-  .mtd-form-item {
+  align-items: flex-start;
+  margin-bottom: 16px;
+
+  .form-item {
     width: 100%;
     display: flex;
-    ::v-deep .mtd-form-item-label,
-    ::v-deep .mtd-form-item-content {
-      text-align: left;
-      flex: 1;
-      margin-left: 0 !important;
+    flex-direction: column;
+
+    .form-label {
+      font-size: 14px;
+      margin-bottom: 8px;
+      color: #333;
+      display: flex;
+      align-items: center;
+
+      .history-icon {
+        margin-left: 6px;
+        cursor: pointer;
+        color: #0a70f5;
+        font-size: 16px;
+      }
+    }
+
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+
+      .radio-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 15px;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        border: 1px solid #dcdfe6;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s;
+
+        &:hover:not(.radio-button-disabled) {
+          border-color: #409eff;
+          color: #409eff;
+        }
+
+        &.radio-button-active {
+          background-color: #409eff;
+          border-color: #409eff;
+          color: white;
+        }
+
+        &.radio-button-disabled {
+          background-color: #f5f7fa;
+          border-color: #e4e7ed;
+          color: #c0c4cc;
+          cursor: not-allowed;
+        }
+      }
     }
   }
-  .guide-form-item-radio-title {
-    display: inline-flex;
-    align-items: center;
-  }
+}
+
+.pl-10 {
+  padding-left: 10px;
 }
 </style>
